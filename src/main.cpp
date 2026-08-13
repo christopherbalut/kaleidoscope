@@ -19,6 +19,7 @@ enum Token {
     tok_extern = -3,
     tok_identifier = -4,
     tok_number = -5,
+    tok_error = -6,
 };
 
 static std::string IdentifierStr; // static because we want to keep it here
@@ -58,20 +59,22 @@ static int gettok() {
     }
 
     if (std::isdigit(LastChar) || LastChar == '.') {
-        // std::cout << "LastChar int:" << LastChar << "\n";
-        // std::cout << "LastChar char: " << static_cast<char>(LastChar) <<
-        // '\n';
         std::string NumStr;
 
+        bool SeenDecimal = false;
+
         while (std::isdigit(LastChar) || LastChar == '.') {
+            if (LastChar == '.') {
+                if (SeenDecimal) {
+                    std::cout << "There are more than one decimal points in "
+                                 "the number, terminating...\n";
+                    return tok_error;
+                }
+                SeenDecimal = true;
+            }
+
             NumStr += LastChar;
             LastChar = std::getchar();
-
-            //   std::cout << "after getchar():\n";
-            //  std::cout << "  int  = " << LastChar << '\n';
-            // std::cout << "  char = " << static_cast<char>(LastChar) << '\n';
-
-            // std::cout << "NumStr is " << NumStr << "\n";
         }
         NumVal = std::strtod(NumStr.c_str(), 0);
         // std::cout << "NumVal is " << NumVal << "\n";
@@ -115,8 +118,12 @@ int main() {
             std::cout << "tok_identifier: " << IdentifierStr << '\n';
         } else if (Token == tok_number) {
             std::cout << "tok_number: " << NumVal << '\n';
+        } else if (Token == tok_error) {
+            std::cout << "tok_error\n";
+            break;
         } else {
             std::cout << "character: " << static_cast<char>(Token) << '\n';
         }
     }
+    return 0;
 }
