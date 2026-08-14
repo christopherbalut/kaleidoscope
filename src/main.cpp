@@ -25,7 +25,7 @@ enum Token {
 static std::string IdentifierStr; // static because we want to keep it here
 static double NumVal;
 
-// gettok():
+// gettok()
 //  skips any whitespace
 //  if not whitespace, add to IdentifierStr, and check if we have def or extern
 //  since those are the only two 'fixed' keywords for numbers we check if it has
@@ -40,11 +40,11 @@ static int gettok() {
         LastChar = getchar();
     }
 
-    if (std::isalpha(LastChar)) {
+    if (std::isalpha(LastChar) || LastChar == '_') {
         IdentifierStr = LastChar;
 
         // get char() moves pointer foward
-        while (std::isalnum(LastChar = std::getchar())) {
+        while (std::isalnum(LastChar = std::getchar()) || LastChar == '_') {
             IdentifierStr += LastChar;
         }
 
@@ -54,6 +54,11 @@ static int gettok() {
 
         if (IdentifierStr == "extern") {
             return tok_extern;
+        }
+
+        if (IdentifierStr == "_") {
+            std::cout << "an identifier cannot just be _, terminating...\n";
+            return tok_error;
         }
         return tok_identifier;
     }
