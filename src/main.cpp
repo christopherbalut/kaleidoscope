@@ -24,6 +24,8 @@ enum Token {
 
 static std::string IdentifierStr; // static because we want to keep it here
 static double NumVal;
+static int LineNum{1};
+static int ColNum{1};
 
 // gettok()
 //  skips any whitespace
@@ -37,10 +39,24 @@ static int gettok() {
     static int LastChar = ' ';
 
     while (std::isspace(LastChar)) {
+        if (LastChar == '\n') {
+            LineNum++;
+            ColNum = 1;
+        } else {
+            ColNum++;
+        }
         LastChar = getchar();
     }
 
     if (std::isalpha(LastChar) || LastChar == '_') {
+        if (LastChar == '\n') {
+            LineNum++;
+            ColNum = 1;
+        } else {
+            ColNum++;
+        }
+        LastChar = getchar();
+
         IdentifierStr = LastChar;
 
         // get char() moves pointer foward
