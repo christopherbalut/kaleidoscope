@@ -13,6 +13,8 @@
 // we don't need to use for def because def can only have one definition (extra
 // information)
 
+using std::isalpha;
+
 enum Token {
     tok_eof = -1,
     tok_def = -2,
@@ -38,6 +40,10 @@ static int ColNum{1};
 static int gettok() {
     static int LastChar = ' ';
 
+    std::cout << "Before entering isspace(Lastchar) while loop\n";
+    std::cout << "ColNum is " << ColNum << "\n";
+    std::cout << "LineNum is " << LineNum << "\n";
+
     while (std::isspace(LastChar)) {
         if (LastChar == '\n') {
             LineNum++;
@@ -48,21 +54,34 @@ static int gettok() {
         LastChar = getchar();
     }
 
-    if (std::isalpha(LastChar) || LastChar == '_') {
+    std::cout << "After entering isspace(Lastchar)\n";
+    std::cout << "ColNum is " << ColNum << "\n";
+    std::cout << "LineNum is " << LineNum << "\n";
+
+    if (isalpha(static_cast<unsigned char>(LastChar)) || LastChar == '_') {
+
+        IdentifierStr = static_cast<unsigned char>(LastChar);
+        ColNum++;
+
+        LastChar = std::getchar();
+
+        // get char() moves pointer foward
+        while (LastChar != EOF &&
+               (std::isalnum(LastChar = std::getchar()) || LastChar == '_')) {
+            IdentifierStr += static_cast<char>(LastChar);
+            ColNum++;
+        }
+
         if (LastChar == '\n') {
             LineNum++;
             ColNum = 1;
         } else {
             ColNum++;
         }
-        LastChar = getchar();
 
-        IdentifierStr = LastChar;
-
-        // get char() moves pointer foward
-        while (std::isalnum(LastChar = std::getchar()) || LastChar == '_') {
-            IdentifierStr += LastChar;
-        }
+        std::cout << "After isalnum and _\n";
+        std::cout << "ColNum is " << ColNum << "\n";
+        std::cout << "LineNum is " << LineNum << "\n";
 
         if (IdentifierStr == "def") {
             return tok_def;
@@ -95,7 +114,11 @@ static int gettok() {
             }
 
             NumStr += LastChar;
+            ColNum++;
             LastChar = std::getchar();
+
+            std::cout << "ColNum is " << ColNum << "\n";
+            std::cout << "LineNum is " << LineNum << "\n";
         }
         NumVal = std::strtod(NumStr.c_str(), 0);
         // std::cout << "NumVal is " << NumVal << "\n";
@@ -104,8 +127,12 @@ static int gettok() {
 
     if (LastChar == '#') {
         while (LastChar != EOF && LastChar != '\n' && LastChar != '\r') {
+            ColNum++;
             LastChar = std::getchar();
         }
+
+        std::cout << "ColNum is " << ColNum << "\n";
+        std::cout << "LineNum is " << LineNum << "\n";
 
         // if not end of file then we restart from the beginning
         if (LastChar != EOF) {
@@ -118,7 +145,10 @@ static int gettok() {
     }
 
     int ThisChar = LastChar;
+    ColNum++;
     LastChar = std::getchar();
+    std::cout << "ColNum is " << ColNum << "\n";
+    std::cout << "LineNum is " << LineNum << "\n";
     return ThisChar;
 }
 
