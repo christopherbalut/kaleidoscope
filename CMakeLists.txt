@@ -10,6 +10,11 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 add_executable(kaleidoscope
     src/main.cpp
+    src/lexer.cpp
+)
+
+target_include_directories(kaleidoscope PRIVATE
+    ${PROJECT_SOURCE_DIR}/include
 )
 
 target_compile_options(kaleidoscope PRIVATE
