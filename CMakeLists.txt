@@ -11,6 +11,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 add_executable(kaleidoscope
     src/main.cpp
     src/lexer.cpp
+    src/ast.cpp
 )
 
 target_include_directories(kaleidoscope PRIVATE
