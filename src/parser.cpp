@@ -3,11 +3,10 @@
 #include <memory>
 #include <vector>
 
-using std::unique_ptr;
+int CurTok;
+std::map<char, int> BinopPrecedence;
+// read token from the lexer and updates the current token
 
-int CurTok; // Current token we are looking at
-
-// read token from the lexer and updates the current toke
 int GetNextToken() { return CurTok = gettok(); }
 
 std::unique_ptr<ExprAST> LogError(const char *Str) {
@@ -89,4 +88,109 @@ std::unique_ptr<ExprAST> ParsePrimary() {
     case '(':
         return ParseParenExpr();
     }
+}
+
+int GetTokPrecedence() {
+    if (!isascii(CurTok)) {
+        return -1;
+    }
+
+    int TokPrec = BinopPrecedence[CurTok];
+
+    if (TokPrec <= 0) {
+        return -1;
+    }
+    return TokPrec;
+}
+
+std::unique_ptr<ExprAST> ParseExpression() {
+
+    auto LHS = ParsePrimary();
+    if (!LHS) {
+        return nullptr;
+    }
+
+    return ParseBinOpRHS(0, std::move(LHS));
+}
+
+std::unique_ptr<ExprAST> ParseBinOpRHS(int ExprPrec,
+                                       std::unique_ptr<ExprAST> LHS) {
+    while (true) {
+        int TokPrec{GetTokPrecedence()};
+
+        if (TokPrec < ExprPrec) {
+            return LHS;
+        }
+
+        int BinOp{CurTok};
+        GetNextToken();
+
+        auto RHS{ParsePrimary()};
+        if (!RHS) {
+            return nullptr;
+        }
+
+        int NextPrec{GetTokPrecedence()};
+        if (TokPrec < NextPrec) {
+            RHS = ParseBinOpRHS(TokPrec + 1, std::move(RHS));
+            if (!RHS) {
+                return nullptr;
+            }
+        }
+        LHS = std::make_unique<BinaryExprAST>(BinOp, std::move(LHS),
+                                              std::move(RHS));
+    }
+}
+
+std::unique_ptr<PrototypeAST> ParsePrototype() {
+    if (CurTok != tok_identifier) {
+        return LogErrorP("Expected function name in prototype");
+    }
+
+    std::string FnName{IdentifierStr};
+    GetNextToken();
+
+    if (CurTok != '(') {
+        return LogErrorP("Expected open parentheses");
+    }
+
+    std::vector<std::string> ArgNames;
+    while (GetNextToken() == tok_identifier) {
+        ArgNames.emplace_back(IdentifierStr);
+    }
+
+    if (CurTok != ')') {
+        return LogErrorP("Expected a closing parentheses");
+    }
+
+    GetNextToken();
+
+    return std::make_unique<PrototypeAST>(FnName, std::move(ArgNames));
+}
+
+std::unique_ptr<FunctionAST> ParseDefinition() {
+    GetNextToken();
+    auto Proto{ParsePrototype()};
+    if (!Proto) {
+        return nullptr;
+    }
+
+    if (auto E{ParseExpression()}) {
+        return std::make_unique<FunctionAST>(std::move(Proto), std::move(E));
+    }
+    return nullptr;
+}
+
+std::unique_ptr<PrototypeAST> ParseExtern() {
+    GetNextToken();
+    return ParsePrototype();
+}
+
+std::unique_ptr<FunctionAST> ParseTopLevelExpr() {
+    if (auto E{ParseExpression()}) {
+        auto Proto{std::make_unique<PrototypeAST>("__anon_expr",
+                                                  std::vector<std::string>())};
+        return std::make_unique<FunctionAST>(std::move(Proto), std::move(E));
+    }
+    return nullptr;
 }

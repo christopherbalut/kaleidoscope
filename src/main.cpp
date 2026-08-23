@@ -1,29 +1,71 @@
 #include "lexer.hpp"
-#include <iostream>
+#include "parser.hpp"
 
-int main() {
+static void HandleDefinition() {
+    if (ParseDefinition()) {
+        fprintf(stderr, "Parsed a function definition.\n");
+    } else {
+        // Skip token for error recovery.
+        GetNextToken();
+    }
+}
+
+static void HandleExtern() {
+    if (ParseExtern()) {
+        fprintf(stderr, "Parsed an extern\n");
+    } else {
+        // Skip token for error recovery.
+        GetNextToken();
+    }
+}
+
+static void HandleTopLevelExpression() {
+    // Evaluate a top-level expression into an anonymous function.
+    if (ParseTopLevelExpr()) {
+        fprintf(stderr, "Parsed a top-level expr\n");
+    } else {
+        // Skip token for error recovery.
+        GetNextToken();
+    }
+}
+
+/// top ::= definition | external | expression | ';'
+static void MainLoop() {
     while (true) {
-        int Token = gettok();
-
-        if (Token == tok_eof) {
-            std::cout << "tok_eof\n";
+        fprintf(stderr, "ready> ");
+        switch (CurTok) {
+        case tok_eof:
+            return;
+        case ';': // ignore top-level semicolons.
+            GetNextToken();
             break;
-        }
-
-        if (Token == tok_def) {
-            std::cout << "tok_def\n";
-        } else if (Token == tok_extern) {
-            std::cout << "tok_extern\n";
-        } else if (Token == tok_identifier) {
-            std::cout << "tok_identifier: " << IdentifierStr << '\n';
-        } else if (Token == tok_number) {
-            std::cout << "tok_number: " << NumVal << '\n';
-        } else if (Token == tok_error) {
-            std::cout << "tok_error\n";
+        case tok_def:
+            HandleDefinition();
             break;
-        } else {
-            std::cout << "character: " << static_cast<char>(Token) << '\n';
+        case tok_extern:
+            HandleExtern();
+            break;
+        default:
+            HandleTopLevelExpression();
+            break;
         }
     }
+}
+
+int main() {
+
+    BinopPrecedence['<'] = 10;
+    BinopPrecedence['+'] = 20;
+    BinopPrecedence['-'] = 30;
+    BinopPrecedence['*'] = 40;
+
+    // Prime the first token.
+    fprintf(stderr, "ready> ");
+    GetNextToken();
+
+    // Run the main "interpreter loop" now.
+    MainLoop();
+
+    return 0;
     return 0;
 }
