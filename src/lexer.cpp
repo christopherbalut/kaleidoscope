@@ -29,39 +29,34 @@ int gettok() {
         LastChar = getchar();
     }
 
-    if (isalpha(static_cast<unsigned char>(LastChar)) || LastChar == '_') {
+    if (LastChar != EOF &&
+        (std::isalpha(static_cast<unsigned char>(LastChar)) ||
+         LastChar == '_')) {
 
-        IdentifierStr = static_cast<unsigned char>(LastChar);
+        IdentifierStr = static_cast<char>(LastChar);
         ColNum++;
 
         LastChar = std::getchar();
 
-        // get char() moves pointer foward
         while (LastChar != EOF &&
-               (std::isalnum(LastChar = std::getchar()) || LastChar == '_')) {
+               (std::isalnum(static_cast<unsigned char>(LastChar)) ||
+                LastChar == '_')) {
             IdentifierStr += static_cast<char>(LastChar);
             ColNum++;
+            LastChar = std::getchar();
         }
 
-        if (LastChar == '\n') {
-            LineNum++;
-            ColNum = 1;
-        } else {
-            ColNum++;
-        }
-
-        if (IdentifierStr == "def") {
+        if (IdentifierStr == "def")
             return tok_def;
-        }
 
-        if (IdentifierStr == "extern") {
+        if (IdentifierStr == "extern")
             return tok_extern;
-        }
 
         if (IdentifierStr == "_") {
             std::cout << "an identifier cannot just be _, terminating...\n";
             return tok_error;
         }
+
         return tok_identifier;
     }
 
