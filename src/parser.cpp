@@ -18,6 +18,11 @@ std::unique_ptr<PrototypeAST> LogErrorP(const char *Str) {
     return nullptr;
 }
 
+Value *LogErrorP(const char *Str) {
+    LogError(Str);
+    return nullptr;
+}
+
 std::unique_ptr<ExprAST> ParseNumberExpr() {
     auto Result = std::make_unique<NumberExprAST>(NumVal);
     GetNextToken();

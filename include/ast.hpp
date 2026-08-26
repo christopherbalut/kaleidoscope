@@ -1,4 +1,5 @@
 #pragma once
+#include "llvm/IR/Value.h"
 #include <memory>
 #include <string>
 #include <vector>
@@ -12,7 +13,8 @@
 
 class ExprAST { // all other AST Classes follow from this
   public:
-    virtual ~ExprAST() = default; // destructor to handle lifetimes
+    virtual ~ExprAST() = default;       // destructor to handle lifetimes
+    virtual llvm::Value *codegen() = 0; // turning AST into IR
 };
 
 // stores literal
@@ -22,6 +24,7 @@ class NumberExprAST : public ExprAST {
   public:
     NumberExprAST(double Val);
     double GetValue() const; // temp for -Werror
+    llvm::Value *codegen() override;
 };
 
 class VariableExprAST : public ExprAST {
@@ -29,6 +32,7 @@ class VariableExprAST : public ExprAST {
 
   public:
     VariableExprAST(const std::string &Name);
+    llvm::Value *codegen() override;
 };
 
 class BinaryExprAST : public ExprAST {
@@ -42,6 +46,7 @@ class BinaryExprAST : public ExprAST {
                   std::unique_ptr<ExprAST> LHS);
 
     char GetOp() const; // temp for -Werror
+    llvm::Value *codegen() override;
 };
 
 class CallExprAST : public ExprAST {
@@ -51,6 +56,7 @@ class CallExprAST : public ExprAST {
   public:
     CallExprAST(const std::string &Callee,
                 std::vector<std::unique_ptr<ExprAST>>);
+    llvm::Value *codegen() override;
 };
 
 // we use PrototypeAST for function headers: string for the function name
@@ -66,6 +72,7 @@ class PrototypeAST {
     PrototypeAST(const std::string &Name, std::vector<std::string> Args);
 
     const std::string &GetName() const;
+    llvm::Function *codegen();
 };
 
 class FunctionAST {
@@ -75,4 +82,6 @@ class FunctionAST {
   public:
     FunctionAST(std::unique_ptr<PrototypeAST> Proto,
                 std::unique_ptr<ExprAST> Body);
+
+    llvm::Function *codegen();
 };
