@@ -4,6 +4,7 @@
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/Module.h"
 #include <llvm/IR/LLVMContext.h>
+#include <llvm/IR/Type.h>
 #include <llvm/Support/Casting.h>
 #include <map>
 #include <utility>
@@ -107,7 +108,25 @@ PrototypeAST::PrototypeAST(const std::string &Name,
 
 const std::string &PrototypeAST::GetName() const { return Name; }
 
-llvm::Function *PrototypeAST::codegen() { return nullptr; }
+llvm::Function *PrototypeAST::codegen() {
+    std::vector<llvm::Type *> Doubles(
+        Args.size(), // creating a vector for the Module
+        llvm::Type::getDoubleTy(*TheContext));
+
+    // return type, parameters, not variadic
+    llvm::FunctionType *FT{llvm::FunctionType::get(
+        llvm::Type::getDoubleTy(*TheContext), Doubles, false)};
+
+    llvm::Function *F{
+        Function::Create(FT, Function::ExternalLinkage, Name, Module.get())};
+
+    unsigned Idx{0};
+    for (auto &Arg : F->args()) {
+        Arg.setName(Args[Idx++]);
+    }
+
+    return F;
+}
 
 FunctionAST::FunctionAST(std::unique_ptr<PrototypeAST> Proto,
                          std::unique_ptr<ExprAST> Body)
