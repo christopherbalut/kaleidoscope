@@ -1,8 +1,25 @@
 #pragma once
+#include "llvm/ADT/APFloat.h"
+#include "llvm/IR/Constants.h"
+#include "llvm/IR/IRBuilder.h"
+#include "llvm/IR/Module.h"
 #include "llvm/IR/Value.h"
+#include "llvm/IR/Verifier.h"
+#include <llvm/IR/BasicBlock.h>
+#include <llvm/IR/LLVMContext.h>
+#include <llvm/IR/Type.h>
+#include <llvm/Support/Casting.h>
 #include <memory>
 #include <string>
 #include <vector>
+
+extern std::unique_ptr<llvm::LLVMContext>
+    TheContext; // owns different core LLVM data structures like types and
+                // constant values
+extern std::unique_ptr<llvm::IRBuilder<>>
+    Builder; // helper object to generate LLVM instructions
+extern std::unique_ptr<llvm::Module>
+    TheModule; // constains functions and global variables
 
 // we implement a class with for the AST since each kind of syntax is
 // represented by a different C++ class

@@ -26,7 +26,7 @@ llvm::Value *LogErrorV(const char *Str) {
 std::unique_ptr<ExprAST> ParseNumberExpr() {
     auto Result = std::make_unique<NumberExprAST>(NumVal);
     GetNextToken();
-    return std::move(Result);
+    return Result;
 }
 
 std::unique_ptr<ExprAST> ParseParenExpr() {

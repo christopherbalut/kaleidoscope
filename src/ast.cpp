@@ -1,24 +1,14 @@
 #include "ast.hpp"
 #include "parser.hpp"
-#include "llvm/ADT/APFloat.h"
-#include "llvm/IR/Constants.h"
-#include "llvm/IR/Module.h"
-#include <llvm/IR/LLVMContext.h>
-#include <llvm/IR/Type.h>
-#include <llvm/Support/Casting.h>
 #include <map>
 #include <utility>
 
 using llvm::Function;
 using llvm::Value;
 
-std::unique_ptr<llvm::LLVMContext>
-    TheContext; // owns different core LLVM data structures like types and
-                // constant values
-std::unique_ptr<IRBuilder<>>
-    Builder; // helper object to generate LLVM instructions
-std::unique_ptr<llvm::Module>
-    Module; // constains functions and global variables
+std::unique_ptr<llvm::LLVMContext> TheContext;
+std::unique_ptr<llvm::IRBuilder<>> Builder;
+std::unique_ptr<llvm::Module> TheModule;
 std::map<std::string, Value *>
     NamedValues; // keeps track of current values that are defined in different
                  // scopes
@@ -63,11 +53,11 @@ Value *BinaryExprAST::codegen() {
         return Builder->CreateFSub(L, R, "sub");
         break;
     case '*':
-        return Builder->CreateFMult(L, R, "mult");
+        return Builder->CreateFMul(L, R, "mult");
         break;
     case '<':
         // floating point comparison creates i32
-        L = Builder->CreateFCmpUlt(L, R, "cmp");
+        L = Builder->CreateFCmpULT(L, R, "cmp");
         return Builder->CreateUIToFP(L, llvm::Type::getDoubleTy(*TheContext));
         break;
     default:
@@ -81,7 +71,7 @@ CallExprAST::CallExprAST(const std::string &Callee,
     : Callee(Callee), Args(std::move(Args)) {}
 
 Value *CallExprAST::codegen() {
-    Function *CalleeF{Module->getFunction(Callee)};
+    Function *CalleeF{TheModule->getFunction(Callee)};
     if (!CalleeF) { // function does not exist
         return nullptr;
     }
@@ -118,7 +108,7 @@ llvm::Function *PrototypeAST::codegen() {
         llvm::Type::getDoubleTy(*TheContext), Doubles, false)};
 
     llvm::Function *F{
-        Function::Create(FT, Function::ExternalLinkage, Name, Module.get())};
+        Function::Create(FT, Function::ExternalLinkage, Name, TheModule.get())};
 
     unsigned Idx{0};
     for (auto &Arg : F->args()) {
@@ -132,4 +122,40 @@ FunctionAST::FunctionAST(std::unique_ptr<PrototypeAST> Proto,
                          std::unique_ptr<ExprAST> Body)
     : Proto(std::move(Proto)), Body(std::move(Body)) {}
 
-llvm::Function *FunctionAST::codegen() { return nullptr; }
+llvm::Function *FunctionAST::codegen() {
+    Function *TheFunction{TheModule->getFunction(Proto->GetName())};
+
+    if (!TheFunction) {
+        TheFunction = Proto->codegen();
+    }
+
+    if (!TheFunction) {
+        return nullptr;
+    }
+
+    if (TheFunction->empty()) {
+        return (Function *)LogErrorV("Function cannot be redefined");
+    }
+
+    // create a new basic block to start insertion into it
+    llvm::BasicBlock *BB{
+        llvm::BasicBlock::Create(*TheContext, "entry", TheFunction)};
+    Builder->SetInsertPoint(BB);
+
+    // record the function arguments in the NamedValues map
+    NamedValues.clear();
+    for (auto &Arg : TheFunction->args()) {
+        NamedValues[std::string(Arg.getName())] = &Arg;
+    }
+
+    //
+    if (Value * RetVal{Body->codegen()}) {
+        Builder->CreateRet(RetVal);
+        llvm::verifyFunction(*TheFunction);
+
+        return TheFunction;
+    }
+
+    TheFunction->eraseFromParent();
+    return nullptr;
+}
