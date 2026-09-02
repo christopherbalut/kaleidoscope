@@ -55,17 +55,17 @@ Value *BinaryExprAST::codegen() {
 
     switch (Op) {
     case '+':
-        return Builder->CreateFAdd(L, R, "add");
+        return Builder->CreateFAdd(L, R, "addtmp");
         break;
     case '-':
-        return Builder->CreateFSub(L, R, "sub");
+        return Builder->CreateFSub(L, R, "subtmp");
         break;
     case '*':
-        return Builder->CreateFMul(L, R, "mult");
+        return Builder->CreateFMul(L, R, "multtmp");
         break;
     case '<':
         // floating point comparison creates i32
-        L = Builder->CreateFCmpULT(L, R, "cmp");
+        L = Builder->CreateFCmpULT(L, R, "cmptmp");
         return Builder->CreateUIToFP(L, llvm::Type::getDoubleTy(*TheContext));
         break;
     default:
