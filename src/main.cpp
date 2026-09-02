@@ -91,8 +91,12 @@ int main() {
     fprintf(stderr, "ready> ");
     GetNextToken();
 
+    InitializeModule();
+
     // Run the main "interpreter loop" now.
     MainLoop();
+
+    TheModule->print(llvm::errs(), nullptr);
 
     return 0;
 }

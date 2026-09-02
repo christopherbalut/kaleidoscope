@@ -26,7 +26,15 @@ Value *NumberExprAST::codegen() {
 
 VariableExprAST::VariableExprAST(const std::string &Name) : Name(Name) {}
 
-Value *VariableExprAST::codegen() { return NamedValues[Name]; }
+Value *VariableExprAST::codegen() {
+    Value *V{NamedValues[Name]};
+
+    if (!V) {
+        return LogErrorV("Unkown variable name");
+    }
+
+    return V;
+}
 
 BinaryExprAST::BinaryExprAST(char Op, std::unique_ptr<ExprAST> LHS,
                              std::unique_ptr<ExprAST> RHS)
@@ -133,7 +141,7 @@ llvm::Function *FunctionAST::codegen() {
         return nullptr;
     }
 
-    if (TheFunction->empty()) {
+    if (!TheFunction->empty()) {
         return (Function *)LogErrorV("Function cannot be redefined");
     }
 
