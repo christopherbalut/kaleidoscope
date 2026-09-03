@@ -7,7 +7,8 @@ using namespace llvm;
 static void InitializeModule() {
     // Open a new context and module.
     TheContext = std::make_unique<LLVMContext>();
-    TheModule = std::make_unique<Module>("my cool jit", *TheContext);
+    TheModule = std::make_unique<Module>("Kaleidoscope JIT", *TheContext);
+    TheModule->setDataLayout(TheJIT->setDataLayout);
 
     // Create a new builder for the module.
     Builder = std::make_unique<IRBuilder<>>(*TheContext);
